@@ -7,9 +7,9 @@
 #' @details
 #'
 #' This function generates frequency by time information related to a specific
-#' threshhold being exceeded.  It does this by pulling all required weather data
+#' threshold being exceeded.  It does this by pulling all required weather data
 #' via the aWhere API, subsets the data for only the requested years, and then
-#' calculates the frequency of the threshhold veing exceeded for each day of the
+#' calculates the frequency of the threshold veing exceeded for each day of the
 #' year.  It then outputs that information in a variety of formats as specified
 #' by the user.  This function only considers maxTemp
 #'
@@ -21,8 +21,8 @@
 #'
 #' @param - latitude: the latitude of the requested location (double)
 #' @param - longitude: the longitude of the requested locations (double)
-#' @param - threshhold: the temperature value that must be exceeded (double)
-#' @param - numConsecutiveDaysToCheck: number of consecutive days the threshhold
+#' @param - threshold: vector of the the temperature values that must be exceeded.  Will be plotted on same figure (double)
+#' @param - numConsecutiveDaysToCheck: number of consecutive days the threshold
 #'   must be exceeded to count as fertility.  The final day of the period will
 #'   be conisdered the fertility event.  Default value is 1 (optional - double)
 #' @param - period_start: character string of the first day for which you want
@@ -45,7 +45,7 @@
 #' @examples
 #' \dontrun{checkFertilityEvent_latlon(latitude = 39.8282
 #'                                     ,longitude = -95.5795
-#'                                     ,threshhold = 20
+#'                                     ,threshold = c(18,20,22)
 #'                                     ,numConsecutiveDaysToCheck = 2
 #'                                     ,period_start = '04-28'
 #'                                     ,period_end = '08-01')}
@@ -55,7 +55,7 @@
 
 checkFertilityEvent_latlon <- function(latitude
                                        ,longitude
-                                       ,threshhold
+                                       ,threshold
                                        ,numConsecutiveDaysToCheck = 1
                                        ,period_start
                                        ,period_end
@@ -83,6 +83,10 @@ checkFertilityEvent_latlon <- function(latitude
       currentStartDate <- paste0(yearsToInclude[x],'-',periodStart[1],'-',periodStart[2])
       currentEndDate   <- paste0(yearsToInclude[x],'-',periodEnd[1],'-',periodEnd[2])
 
+      if (numConsecutiveDaysToCheck > 1) {
+        currentStartDate <- as.character(ymd(currentStartDate) - numConsecutiveDaysToCheck + 1)
+      }
+
       if (currentStartDate > (Sys.Date()-1)) {
         next
       }
@@ -105,6 +109,10 @@ checkFertilityEvent_latlon <- function(latitude
     } else {
       currentStartDate <- paste0(yearsToInclude[x],'-',periodStart[1],'-',periodStart[2])
       currentEndDate   <- paste0(yearsToInclude[x],'-12-31')
+
+      if (numConsecutiveDaysToCheck > 1) {
+        currentStartDate <- as.character(ymd(currentStartDate) - numConsecutiveDaysToCheck + 1)
+      }
 
       if (currentStartDate > (Sys.Date()-1)) {
         next
@@ -165,69 +173,91 @@ checkFertilityEvent_latlon <- function(latitude
   #Drob weirdness related to leap years
   returnedData <- returnedData[!(month == 2 & day == 29) & dayOfYear <= 365,]
 
-  returnedData[,exceedThreshhold := 0]
-  returnedData[,exceedThreshhold_0 := 0]
-  returnedData[((temperatures.max + temperatures.min)/2) < threshhold,exceedThreshhold_0 := 1]
+  thresholdString <- c()
 
-  fertilityString <- paste0('returnedData[exceedThreshhold_0 == 1')
+  for (z in 1:length(threshold)) {
+    currentthreshold <- threshold[z]
 
-  if (numConsecutiveDaysToCheck > 1) {
+    returnedData[,exceedthreshold := 0]
+    returnedData[,exceedthreshold_0 := 0]
 
-    fertilityString <- paste0(fertilityString,' & ')
 
-    for (y in 2:numConsecutiveDaysToCheck) {
-      #we are using lag here to recreat silverlight behavior where the fertility value of sequence was reported for the last day of the sequence
-      eval(parse(text = paste0('returnedData[,exceedThreshhold_',y-1,' := shift(exceedThreshhold_0,n = y-1,type = \'lag\')]')))
+    returnedData[((temperatures.max + temperatures.min)/2) < currentthreshold,exceedthreshold_0 := 1]
 
-      fertilityString <- paste0(fertilityString,'exceedThreshhold_',y-1,' == 1')
+    fertilityString <- paste0('returnedData[exceedthreshold_0 == 1')
 
-      if (y < numConsecutiveDaysToCheck) {
-        fertilityString <- paste0(fertilityString,' & ')
-      } else {
-        fertilityString <- paste0(fertilityString,', exceedThreshhold := 1]')
+    if (numConsecutiveDaysToCheck > 1) {
+
+      fertilityString <- paste0(fertilityString,' & ')
+
+      for (y in 2:numConsecutiveDaysToCheck) {
+        #we are using lag here to recreat silverlight behavior where the fertility value of sequence was reported for the last day of the sequence
+        eval(parse(text = paste0('returnedData[,exceedthreshold_',y-1,' := shift(exceedthreshold_0,n = y-1,type = \'lag\')]')))
+
+        fertilityString <- paste0(fertilityString,'exceedthreshold_',y-1,' == 1')
+
+        if (y < numConsecutiveDaysToCheck) {
+          fertilityString <- paste0(fertilityString,' & ')
+        } else {
+          fertilityString <- paste0(fertilityString,', exceedthreshold := 1]')
+        }
+
       }
-
+    } else {
+      fertilityString <- paste0(fertilityString,', exceedthreshold := 1]')
     }
-  } else {
-    fertilityString <- paste0(fertilityString,', exceedThreshhold := 1]')
+
+    eval(parse(text = fertilityString))
+
+    returnedData[,grep('exceedthreshold_',colnames(returnedData),fixed = TRUE,value = TRUE) := NULL]
+
+    eval(parse(text = paste0('returnedData[,freqOfFertilityEvent_',currentthreshold,' := mean(exceedthreshold,na.rm = TRUE),by = \'dayOfYear\']')))
+
+    thresholdString <- c(thresholdString,paste0('freqOfFertilityEvent_',currentthreshold))
+
   }
 
-  eval(parse(text = fertilityString))
-
-  returnedData[,grep('exceedThreshhold_',colnames(returnedData),fixed = TRUE,value = TRUE) := NULL]
-
-
-  returnedData[,freqOfFertilityEvent := mean(exceedThreshhold,na.rm = TRUE),by = 'dayOfYear']
-
-  dataToPlot <- unique(unique(returnedData[,list(dayOfYear,seqDatePosition,monthDayString,freqOfFertilityEvent)],by = 'dayOfYear'),by = 'monthDayString')
+  eval(parse(text = paste0('dataToPlot <- unique(unique(returnedData[,list(dayOfYear,seqDatePosition,monthDayString,',paste0(thresholdString,collapse = ','),')],by = \'dayOfYear\'),by = \'monthDayString\')')))
   setkey(dataToPlot,seqDatePosition)
 
+  #converting to long format to handle plotting multiple thresholds at once
+  dataToPlot <- data.table::melt(dataToPlot,id.vars = c('dayOfYear','seqDatePosition','monthDayString'),measure.vars = thresholdString)
+
+
   #About 10 tick labels is max for legible plot in typical visualization window
-  sizeBreaks <- ceiling(nrow(dataToPlot)/10)
+  sizeBreaks <- ceiling(nrow(dataToPlot)/10)/length(threshold)
 
 
   if (smoothPlot == FALSE) {
 
-    fertilityPlot <- ggplot(dataToPlot, aes(seqDatePosition, freqOfFertilityEvent)) +
+    fertilityPlot <- ggplot(dataToPlot[seqDatePosition >= numConsecutiveDaysToCheck,]
+                            ,aes(x = seqDatePosition, y = value, group = variable, colour = variable)) +
                       coord_cartesian(ylim = c(0,1)) +
                       geom_point() +
                       geom_line() +
-                      scale_x_continuous(breaks = dataToPlot[seq(1,.N,sizeBreaks),seqDatePosition],labels= dataToPlot[seq(1,.N,sizeBreaks),monthDayString]) +
-                      ggtitle(label = paste0('Fertility Frequency'),subtitle = paste0('Latitude: ',latitude,' Longitude: ',longitude,'\nFertility Threshhold:',threshhold,'\nNumber Sequential Days: ',numConsecutiveDaysToCheck,'\nYears Included: ',paste0(gsub('20',"'",yearsToInclude),collapse = ', '))) +
+                      scale_x_continuous(breaks = unique(dataToPlot[,list(seqDatePosition,monthDayString)])[seq(numConsecutiveDaysToCheck,.N,sizeBreaks),seqDatePosition]
+                                         ,labels= unique(dataToPlot[,list(seqDatePosition,monthDayString)])[seq(numConsecutiveDaysToCheck,.N,sizeBreaks),monthDayString]) +
+                      ggtitle(label = paste0('Fertility Frequency')
+                              ,subtitle = paste0('Latitude: ',latitude,' Longitude: ',longitude,'\nNumber Sequential Days: ',numConsecutiveDaysToCheck,'\nYears Included: ',paste0(gsub('20',"'",yearsToInclude),collapse = ', '))) +
                       ylab('Frequency of Fertility Event') +
                       xlab('Date') +
-                      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+                      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+                      scale_color_discrete(name = 'Fertility\nthreshold',labels = paste0(threshold,'°C'))
   } else {
 
-    fertilityPlot <- ggplot(dataToPlot, aes(seqDatePosition, freqOfFertilityEvent)) +
+    fertilityPlot <- ggplot(dataToPlot[seqDatePosition >= numConsecutiveDaysToCheck,]
+                            ,aes(x = seqDatePosition, y = value, colour = variable)) +
                       coord_cartesian(ylim = c(0,1)) +
                       geom_point() +
                       geom_smooth(span = .3, se = FALSE) +
-                      scale_x_continuous(breaks = dataToPlot[seq(1,.N,sizeBreaks),seqDatePosition],labels= dataToPlot[seq(1,.N,sizeBreaks),monthDayString]) +
-                      ggtitle(label = paste0('Fertility Frequency'),subtitle = paste0('Latitude: ',latitude,' Longitude: ',longitude,'\nFertility Threshhold:',threshhold,'\nNumber Sequential Days: ',numConsecutiveDaysToCheck,'\nYears Included: ',paste0(gsub('20',"'",yearsToInclude),collapse = ', '))) +
+                      scale_x_continuous(breaks = unique(dataToPlot[,list(seqDatePosition,monthDayString)])[seq(numConsecutiveDaysToCheck,.N,sizeBreaks),seqDatePosition]
+                                         ,labels= unique(dataToPlot[,list(seqDatePosition,monthDayString)])[seq(numConsecutiveDaysToCheck,.N,sizeBreaks),monthDayString]) +
+                      ggtitle(label = paste0('Fertility Frequency')
+                              ,subtitle = paste0('Latitude: ',latitude,' Longitude: ',longitude,'\nNumber Sequential Days: ',numConsecutiveDaysToCheck,'\nYears Included: ',paste0(gsub('20',"'",yearsToInclude),collapse = ', '))) +
                       ylab('Frequency of Fertility Event') +
                       xlab('Date') +
-                      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+                      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+                      scale_color_discrete(name = 'Fertility\nthreshold',labels = paste0(threshold,'°C'))
   }
 
 
@@ -241,9 +271,11 @@ checkFertilityEvent_latlon <- function(latitude
     ggsave(saveFigure,fertilityPlot)
   }
 
-  returnedData[,c('month','day','dayOfYear','exceedThreshhold') := NULL]
+  datesToInclude <- unique(returnedData[,monthDayString])[-(1:(numConsecutiveDaysToCheck-1))]
 
-  return(list(returnedData,fertilityPlot))
+  returnedData[,c('month','day','dayOfYear','exceedthreshold','seqDatePosition') := NULL]
+
+  return(list(returnedData[monthDayString %in% datesToInclude],fertilityPlot))
 
 }
 
