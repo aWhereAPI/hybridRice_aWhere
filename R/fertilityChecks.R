@@ -98,7 +98,8 @@ checkFertilityEvent_latlon <- function(latitude
       suppressWarnings(returnedData[[length(returnedData) +1]] <- as.data.table(aWhereAPI::daily_observed_latlng(latitude
                                                                                                                 ,longitude
                                                                                                                 ,currentStartDate
-                                                                                                                ,currentEndDate)))
+                                                                                                                ,currentEndDate
+                                                                                                                ,propertiesToInclude = c('temperatures'))))
 
       returnedData[[length(returnedData)]][,seqDatePosition := seq(1,seqDateLength,1)]
     } else {
@@ -120,7 +121,8 @@ checkFertilityEvent_latlon <- function(latitude
       suppressWarnings(returnedData[[length(returnedData) +1]] <- as.data.table(aWhereAPI::daily_observed_latlng(latitude
                                                                                                                 ,longitude
                                                                                                                 ,currentStartDate
-                                                                                                                ,currentEndDate)))
+                                                                                                                ,currentEndDate
+                                                                                                                ,propertiesToInclude = c('temperatures'))))
 
       returnedData[[length(returnedData)]][,seqDatePosition := seq(1,seqDateLength_1,1)]
 
@@ -143,7 +145,8 @@ checkFertilityEvent_latlon <- function(latitude
       suppressWarnings(returnedData[[length(returnedData) +1]] <- as.data.table(aWhereAPI::daily_observed_latlng(latitude
                                                                                                                 ,longitude
                                                                                                                 ,currentStartDate
-                                                                                                                ,currentEndDate)))
+                                                                                                                ,currentEndDate
+                                                                                                                ,propertiesToInclude = c('temperatures'))))
 
       returnedData[[length(returnedData)]][,seqDatePosition := seq(seqDateLength_1+1,seqDateLength_1 + seqDateLength_2,1)]
     }
