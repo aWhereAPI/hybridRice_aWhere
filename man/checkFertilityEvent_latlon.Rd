@@ -4,20 +4,21 @@
 \alias{checkFertilityEvent_latlon}
 \title{checkFertilityEvent_latlon}
 \usage{
-checkFertilityEvent_latlon(latitude, longitude, threshhold,
+checkFertilityEvent_latlon(latitude, longitude, threshold,
   numConsecutiveDaysToCheck = 1, period_start, period_end,
   yearsToInclude = seq(2006, as.numeric(strsplit(as.character(Sys.Date()),
-  split = "-")[[1]][1]), 1), smoothPlot = FALSE, saveFigure = "",
-  saveCSV = "")
+  split = "-")[[1]][1]), 1), smoothPlot = FALSE, saveCSV = "",
+  saveFigure = "", figureDims = c(6, 3.38, "in"))
 }
 \arguments{
 \item{-}{latitude: the latitude of the requested location (double)}
 
 \item{-}{longitude: the longitude of the requested locations (double)}
 
-\item{-}{threshhold: the temperature value that must be exceeded (double)}
+\item{-}{threshold: vector of the the temperature values that must be
+exceeded.  Will be plotted on same figure (double)}
 
-\item{-}{numConsecutiveDaysToCheck: number of consecutive days the threshhold
+\item{-}{numConsecutiveDaysToCheck: number of consecutive days the threshold
 must be exceeded to count as fertility.  The final day of the period will
 be conisdered the fertility event.  Default value is 1 (optional - double)}
 
@@ -29,7 +30,20 @@ retrieve data, in the form without including the year: MM-DD}
 
 \item{-}{yearsToInclude: vector of years to use for calculating frequency of
 fertility events.  Default is all years from 2006 to present (optional -
-doubble)}
+double)}
+
+\item{-}{smoothPlot: Smooth the plot (optional - Boolean)}
+
+\item{-}{saveCSV: complete path and filename for output of saved csv. Any
+deviation away from '' will be treated as valid entry (optional - string)}
+
+\item{-}{saveFigure: complete path and filename for output of saved figure.
+Any deviation away from '' will be treated as valid entry (optional -
+string)}
+
+\item{-}{figureDims: Vector where 1st element is figureWidth, 2nd element is
+figure height, 3rd element is the units of width/height.  Valid entries for
+3rd element (units) is "in","cm","mm". (optional - c(numeric,numeric,string))}
 }
 \value{
 List.  Element 1 is the full datset queried from API with chance of
@@ -42,9 +56,9 @@ List.  Element 1 is the full datset queried from API with chance of
 }
 \details{
 This function generates frequency by time information related to a specific
-threshhold being exceeded.  It does this by pulling all required weather data
+threshold being exceeded.  It does this by pulling all required weather data
 via the aWhere API, subsets the data for only the requested years, and then
-calculates the frequency of the threshhold veing exceeded for each day of the
+calculates the frequency of the threshold veing exceeded for each day of the
 year.  It then outputs that information in a variety of formats as specified
 by the user.  This function only considers maxTemp
 
@@ -54,11 +68,8 @@ decimal degrees.
 \examples{
 \dontrun{checkFertilityEvent_latlon(latitude = 39.8282
                                     ,longitude = -95.5795
-                                    ,threshhold = 20
+                                    ,threshold = c(18,20,22)
                                     ,numConsecutiveDaysToCheck = 2
                                     ,period_start = '04-28'
                                     ,period_end = '08-01')}
-}
-\references{
-NEED TO ADD
 }

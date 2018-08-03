@@ -17,11 +17,10 @@
 #' decimal degrees.
 #'
 #'
-#' @references NEED TO ADD
-#'
 #' @param - latitude: the latitude of the requested location (double)
 #' @param - longitude: the longitude of the requested locations (double)
-#' @param - threshold: vector of the the temperature values that must be exceeded.  Will be plotted on same figure (double)
+#' @param - threshold: vector of the the temperature values that must be
+#'   exceeded.  Will be plotted on same figure (double)
 #' @param - numConsecutiveDaysToCheck: number of consecutive days the threshold
 #'   must be exceeded to count as fertility.  The final day of the period will
 #'   be conisdered the fertility event.  Default value is 1 (optional - double)
@@ -31,7 +30,16 @@
 #'   retrieve data, in the form without including the year: MM-DD
 #' @param - yearsToInclude: vector of years to use for calculating frequency of
 #'   fertility events.  Default is all years from 2006 to present (optional -
-#'   doubble)
+#'   double)
+#' @param - smoothPlot: Smooth the plot (optional - Boolean)
+#' @param - saveCSV: complete path and filename for output of saved csv. Any
+#'   deviation away from '' will be treated as valid entry (optional - string)
+#' @param - saveFigure: complete path and filename for output of saved figure.
+#'   Any deviation away from '' will be treated as valid entry (optional -
+#'   string)
+#' @param - figureDims: Vector where 1st element is figureWidth, 2nd element is
+#'   figure height, 3rd element is the units of width/height.  Valid entries for
+#'   3rd element (units) is "in","cm","mm". (optional - c(numeric,numeric,string))
 #'
 #' @import aWhereAPI
 #' @import lubridate
@@ -61,8 +69,9 @@ checkFertilityEvent_latlon <- function(latitude
                                        ,period_end
                                        ,yearsToInclude = seq(2006,as.numeric(strsplit(as.character(Sys.Date()),split = '-')[[1]][1]),1)
                                        ,smoothPlot = FALSE
+                                       ,saveCSV = ''
                                        ,saveFigure = ''
-                                       ,saveCSV = '') {
+                                       ,figureDims = c(6,3.38,'in')) {
 
   periodStart <- strsplit(period_start,'-','-',fixed = TRUE)[[1]]
   periodEnd   <- strsplit(period_end,'-','-',fixed = TRUE)[[1]]
@@ -268,7 +277,12 @@ checkFertilityEvent_latlon <- function(latitude
   }
 
   if (saveFigure != '') {
-    ggsave(saveFigure,fertilityPlot)
+    ggsave(filename = saveFigure
+           ,plot = fertilityPlot
+           ,width = as.numeric(figureDims[1])
+           ,height = as.numeric(figureDims[2])
+           ,units = figureDims[3])
+
   }
 
   datesToInclude <- unique(returnedData[,monthDayString])[-(1:(numConsecutiveDaysToCheck-1))]
