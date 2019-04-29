@@ -67,7 +67,7 @@ checkFertilityEvent_latlon <- function(latitude
                                        ,numConsecutiveDaysToCheck = 1
                                        ,period_start
                                        ,period_end
-                                       ,yearsToInclude = seq(2006,as.numeric(strsplit(as.character(Sys.Date()),split = '-')[[1]][1]),1)
+                                       ,yearsToInclude = seq(2008,as.numeric(strsplit(as.character(Sys.Date()),split = '-')[[1]][1]),1)
                                        ,smoothPlot = FALSE
                                        ,saveCSV = ''
                                        ,saveFigure = ''
@@ -123,49 +123,45 @@ checkFertilityEvent_latlon <- function(latitude
         currentStartDate <- as.character(ymd(currentStartDate) - numConsecutiveDaysToCheck + 1)
       }
 
-      if (currentStartDate > (Sys.Date()-1)) {
-        next
-      }
-
       if (currentEndDate > (Sys.Date()-1)) {
         currentEndDate <- as.character(Sys.Date()-1)
       }
 
-      seqDateLength_1 <- length(seq(lubridate::ymd(currentStartDate),lubridate::ymd(currentEndDate),1))
+      if (currentStartDate <= (Sys.Date()-1)) {
+        seqDateLength_1 <- length(seq(lubridate::ymd(currentStartDate),lubridate::ymd(currentEndDate),1))
 
-      cat(paste0('     Requesting Data between ',currentStartDate,' and ',currentEndDate,'\n'))
+        cat(paste0('     Requesting Data between ',currentStartDate,' and ',currentEndDate,'\n'))
 
-      suppressWarnings(returnedData[[length(returnedData) +1]] <- as.data.table(aWhereAPI::daily_observed_latlng(latitude
-                                                                                                                ,longitude
-                                                                                                                ,currentStartDate
-                                                                                                                ,currentEndDate
-                                                                                                                ,propertiesToInclude = c('temperatures'))))
+        suppressWarnings(returnedData[[length(returnedData) +1]] <- as.data.table(aWhereAPI::daily_observed_latlng(latitude
+                                                                                                                   ,longitude
+                                                                                                                   ,currentStartDate
+                                                                                                                   ,currentEndDate
+                                                                                                                   ,propertiesToInclude = c('temperatures'))))
 
-      returnedData[[length(returnedData)]][,seqDatePosition := seq(1,seqDateLength_1,1)]
-
+        returnedData[[length(returnedData)]][,seqDatePosition := seq(1,seqDateLength_1,1)]
+      }
 
       currentStartDate <- paste0(yearsToInclude[x],'-01-01')
       currentEndDate   <- paste0(yearsToInclude[x],'-',periodEnd[1],'-',periodEnd[2])
 
-      if (currentStartDate > (Sys.Date()-1)) {
-        next
-      }
-
       if (currentEndDate > (Sys.Date()-1)) {
         currentEndDate <- as.character(Sys.Date()-1)
       }
 
-      seqDateLength_2 <- length(seq(lubridate::ymd(currentStartDate),lubridate::ymd(currentEndDate),1))
 
-      cat(paste0('     Requesting Data between ',currentStartDate,' and ',currentEndDate,'\n'))
+      if (currentStartDate <= (Sys.Date()-1)) {
+        seqDateLength_2 <- length(seq(lubridate::ymd(currentStartDate),lubridate::ymd(currentEndDate),1))
 
-      suppressWarnings(returnedData[[length(returnedData) +1]] <- as.data.table(aWhereAPI::daily_observed_latlng(latitude
-                                                                                                                ,longitude
-                                                                                                                ,currentStartDate
-                                                                                                                ,currentEndDate
-                                                                                                                ,propertiesToInclude = c('temperatures'))))
+        cat(paste0('     Requesting Data between ',currentStartDate,' and ',currentEndDate,'\n'))
 
-      returnedData[[length(returnedData)]][,seqDatePosition := seq(seqDateLength_1+1,seqDateLength_1 + seqDateLength_2,1)]
+        suppressWarnings(returnedData[[length(returnedData) +1]] <- as.data.table(aWhereAPI::daily_observed_latlng(latitude
+                                                                                                                   ,longitude
+                                                                                                                   ,currentStartDate
+                                                                                                                   ,currentEndDate
+                                                                                                                   ,propertiesToInclude = c('temperatures'))))
+
+        returnedData[[length(returnedData)]][,seqDatePosition := seq(seqDateLength_1+1,seqDateLength_1 + seqDateLength_2,1)]
+      }
     }
   }
 
@@ -173,6 +169,7 @@ checkFertilityEvent_latlon <- function(latitude
 
   setkey(returnedData,date)
 
+  returnedData <- returnedData[date >= lubridate::ymd(paste(min(yearsToInclude),period_start,collapse = '-'))]
 
   returnedData[,month     := lubridate::month(date)]
   returnedData[,day       := lubridate::day(date)]
@@ -305,7 +302,7 @@ checkFertilityEvent_latlon <- function(latitude
 
   setnames(returnedData,c('monthDayString'),c('monthDay'))
 
-  return(list(returnedData[monthDayString %in% datesToInclude],fertilityPlot))
+  return(list(returnedData[monthDay %in% datesToInclude],fertilityPlot))
 
 }
 
