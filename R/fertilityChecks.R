@@ -182,6 +182,10 @@ checkFertilityEvent_latlon <- function(latitude
   #Drob weirdness related to leap years
   returnedData <- returnedData[!(month == 2 & day == 29) & dayOfYear <= 365,]
 
+  returnedData[,c('temperatures.max_avg','temperatures.min_avg') := list(round(mean(temperatures.max,na.rm = TRUE),2)
+                                                                         ,round(mean(temperatures.min,na.rm = TRUE),2)),by = 'monthDayString']
+
+
   thresholdString <- c()
 
   for (z in 1:length(threshold)) {
@@ -288,6 +292,18 @@ checkFertilityEvent_latlon <- function(latitude
   datesToInclude <- unique(returnedData[,monthDayString])[-(1:(numConsecutiveDaysToCheck-1))]
 
   returnedData[,c('month','day','dayOfYear','exceedthreshold','seqDatePosition') := NULL]
+
+  setcolorder(returnedData,c('latitude'
+                             ,'longitude'
+                             ,'monthDayString'
+                             ,'date'
+                             ,'temperatures.max'
+                             ,'temperatures.min'
+                             ,grep(pattern = 'freqOfFertilityEvent',x = colnames(returnedData),value = TRUE)
+                             ,'temperatures.max_avg'
+                             ,'temperatures.min_avg'))
+
+  setnames(returnedData,c('monthDayString'),c('monthDay'))
 
   return(list(returnedData[monthDayString %in% datesToInclude],fertilityPlot))
 
