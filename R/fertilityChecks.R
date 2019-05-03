@@ -85,91 +85,63 @@ checkFertilityEvent_latlon <- function(latitude
   returnedData <- list()
 
   for (x in 1:length(yearsToInclude)) {
-    cat(paste0('Requesting Data for Year ',yearsToInclude[x],'\n'))
+    cat(paste0('Determining API Calls for year ',yearsToInclude[x],'\n'))
 
     #Breaking it up this way will minimize the data transfer size
     if (wrapsNewYear == FALSE) {
       currentStartDate <- paste0(yearsToInclude[x],'-',periodStart[1],'-',periodStart[2])
       currentEndDate   <- paste0(yearsToInclude[x],'-',periodEnd[1],'-',periodEnd[2])
-
-      if (numConsecutiveDaysToCheck > 1) {
-        currentStartDate <- as.character(ymd(currentStartDate) - numConsecutiveDaysToCheck + 1)
-      }
-
-      if (currentStartDate > (Sys.Date()-1)) {
-        next
-      }
-
-      if (currentEndDate > Sys.Date()) {
-        currentEndDate <- as.character(Sys.Date()-1)
-      }
-
-      seqDateLength <- length(seq(lubridate::ymd(currentStartDate),lubridate::ymd(currentEndDate),1))
-
-      cat(paste0('    Requesting Data between ',currentStartDate,' and ',currentEndDate,'\n'))
-
-      suppressWarnings(returnedData[[length(returnedData) +1]] <- as.data.table(aWhereAPI::daily_observed_latlng(latitude
-                                                                                                                ,longitude
-                                                                                                                ,currentStartDate
-                                                                                                                ,currentEndDate
-                                                                                                                ,propertiesToInclude = c('temperatures'))))
-
-      returnedData[[length(returnedData)]][,seqDatePosition := seq(1,seqDateLength,1)]
     } else {
       currentStartDate <- paste0(yearsToInclude[x],'-',periodStart[1],'-',periodStart[2])
-      currentEndDate   <- paste0(yearsToInclude[x],'-12-31')
-
-      if (numConsecutiveDaysToCheck > 1) {
-        currentStartDate <- as.character(ymd(currentStartDate) - numConsecutiveDaysToCheck + 1)
-      }
-
-      if (currentEndDate > (Sys.Date()-1)) {
-        currentEndDate <- as.character(Sys.Date()-1)
-      }
-
-      if (currentStartDate <= (Sys.Date()-1)) {
-        seqDateLength_1 <- length(seq(lubridate::ymd(currentStartDate),lubridate::ymd(currentEndDate),1))
-
-        cat(paste0('     Requesting Data between ',currentStartDate,' and ',currentEndDate,'\n'))
-
-        suppressWarnings(returnedData[[length(returnedData) +1]] <- as.data.table(aWhereAPI::daily_observed_latlng(latitude
-                                                                                                                   ,longitude
-                                                                                                                   ,currentStartDate
-                                                                                                                   ,currentEndDate
-                                                                                                                   ,propertiesToInclude = c('temperatures'))))
-
-        returnedData[[length(returnedData)]][,seqDatePosition := seq(1,seqDateLength_1,1)]
-      }
-
-      currentStartDate <- paste0(yearsToInclude[x],'-01-01')
-      currentEndDate   <- paste0(yearsToInclude[x],'-',periodEnd[1],'-',periodEnd[2])
-
-      if (currentEndDate > (Sys.Date()-1)) {
-        currentEndDate <- as.character(Sys.Date()-1)
-      }
-
-
-      if (currentStartDate <= (Sys.Date()-1)) {
-        seqDateLength_2 <- length(seq(lubridate::ymd(currentStartDate),lubridate::ymd(currentEndDate),1))
-
-        cat(paste0('     Requesting Data between ',currentStartDate,' and ',currentEndDate,'\n'))
-
-        suppressWarnings(returnedData[[length(returnedData) +1]] <- as.data.table(aWhereAPI::daily_observed_latlng(latitude
-                                                                                                                   ,longitude
-                                                                                                                   ,currentStartDate
-                                                                                                                   ,currentEndDate
-                                                                                                                   ,propertiesToInclude = c('temperatures'))))
-
-        returnedData[[length(returnedData)]][,seqDatePosition := seq(seqDateLength_1+1,seqDateLength_1 + seqDateLength_2,1)]
-      }
+      currentEndDate   <- paste0(yearsToInclude[x]+ 1,'-',periodEnd[1],'-',periodEnd[2])
     }
+
+    if (numConsecutiveDaysToCheck > 1) {
+      currentStartDate <- as.character(ymd(currentStartDate) - numConsecutiveDaysToCheck + 1)
+    }
+
+    if (currentStartDate > (Sys.Date()-1)) {
+      cat(paste0('    No API calls for year ',yearsToInclude[x],'\n'))
+      next
+    }
+
+    if (currentEndDate > Sys.Date()) {
+      currentEndDate <- as.character(Sys.Date()-1)
+    }
+
+    seqDateLength <- length(seq(lubridate::ymd(currentStartDate),lubridate::ymd(currentEndDate),1))
+
+    cat(paste0('    Requesting Data between ',currentStartDate,' and ',currentEndDate,'\n'))
+
+    suppressWarnings(returnedData[[length(returnedData) +1]] <- as.data.table(aWhereAPI::daily_observed_latlng(latitude
+                                                                                                              ,longitude
+                                                                                                              ,currentStartDate
+                                                                                                              ,currentEndDate
+                                                                                                              ,propertiesToInclude = c('temperatures'))))
+
+
+
+    returnedData[[length(returnedData)]][,seqDatePosition := seq(1,.N,1)]
+
+    returnedData[[length(returnedData)]][,paste0(c('temperatures.max_roll_'
+                                                   ,'temperatures.min_roll_')
+                                                 ,numConsecutiveDaysToCheck) := list(round(zoo::rollapply(data = temperatures.max
+                                                                                                          ,width = numConsecutiveDaysToCheck
+                                                                                                          ,FUN = mean
+                                                                                                          ,na.rm = TRUE
+                                                                                                          ,align = 'right'
+                                                                                                          ,fill = NA),2)
+                                                                                     ,round(zoo::rollapply(data = temperatures.max
+                                                                                                           ,width = numConsecutiveDaysToCheck
+                                                                                                           ,FUN = mean
+                                                                                                           ,na.rm = TRUE
+                                                                                                           ,align = 'right'
+                                                                                                           ,fill = NA),2))]
   }
 
   returnedData <- data.table::as.data.table(do.call("rbind", returnedData))
 
   setkey(returnedData,date)
-
-  returnedData <- returnedData[date >= lubridate::ymd(paste(min(yearsToInclude),period_start,collapse = '-'))]
 
   returnedData[,month     := lubridate::month(date)]
   returnedData[,day       := lubridate::day(date)]
@@ -181,7 +153,6 @@ checkFertilityEvent_latlon <- function(latitude
 
   returnedData[,c('temperatures.max_avg','temperatures.min_avg') := list(round(mean(temperatures.max,na.rm = TRUE),2)
                                                                          ,round(mean(temperatures.min,na.rm = TRUE),2)),by = 'monthDayString']
-
 
   thresholdString <- c()
 
