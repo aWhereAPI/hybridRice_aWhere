@@ -131,7 +131,7 @@ checkFertilityEvent_latlon <- function(latitude
                                                                                                           ,na.rm = TRUE
                                                                                                           ,align = 'right'
                                                                                                           ,fill = NA),2)
-                                                                                     ,round(zoo::rollapply(data = temperatures.max
+                                                                                     ,round(zoo::rollapply(data = temperatures.min
                                                                                                            ,width = numConsecutiveDaysToCheck
                                                                                                            ,FUN = mean
                                                                                                            ,na.rm = TRUE
