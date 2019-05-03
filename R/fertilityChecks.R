@@ -269,7 +269,10 @@ checkFertilityEvent_latlon <- function(latitude
                              ,'temperatures.min'
                              ,grep(pattern = 'freqOfFertilityEvent',x = colnames(returnedData),value = TRUE)
                              ,'temperatures.max_avg'
-                             ,'temperatures.min_avg'))
+                             ,'temperatures.min_avg'
+                             ,paste0(c('temperatures.max_roll_'
+                                       ,'temperatures.min_roll_')
+                                     ,numConsecutiveDaysToCheck)))
 
   setnames(returnedData,c('monthDayString'),c('monthDay'))
 
