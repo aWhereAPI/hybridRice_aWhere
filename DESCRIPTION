@@ -1,6 +1,6 @@
 Package: hybridRicePackage
 Title: Computes Chance of Fertility Event for Hybrid Rice Empirically using aWhere
-Version: 0.0.0.9000
+Version: 1.0
 Authors@R: c(person("Technical", "Support", ,"technicalsupport@awhere.com", role = c("aut","cre","ctb")))
 Description: Computes Chance of Fertility Event for Hybrid Rice Empirically using aWhere.  Uses Lat/Lon construct for specifying location and returns both the aWhere data, calculated chance of fertility per day, and a generated figure
 Depends: R (>= 3.3.2)
