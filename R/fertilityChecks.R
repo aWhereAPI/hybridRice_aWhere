@@ -117,14 +117,18 @@ checkFertilityEvent_latlon <- function(latitude
                                                                                                               ,longitude
                                                                                                               ,currentStartDate
                                                                                                               ,currentEndDate
-                                                                                                              ,propertiesToInclude = c('temperatures'))))
+                                                                                                              ,propertiesToInclude = c('temperatures'
+                                                                                                                                       ,'precipitation'))))
+
+    returnedData[[length(returnedData)]][,precipitation.amount := round(precipitation.amount,2)]
 
 
 
     returnedData[[length(returnedData)]][,seqDatePosition := seq(1,.N,1)]
 
     returnedData[[length(returnedData)]][,paste0(c('temperatures.max_roll_'
-                                                   ,'temperatures.min_roll_')
+                                                   ,'temperatures.min_roll_'
+                                                   ,'precipitation.amount_roll_')
                                                  ,numConsecutiveDaysToCheck) := list(round(zoo::rollapply(data = temperatures.max
                                                                                                           ,width = numConsecutiveDaysToCheck
                                                                                                           ,FUN = mean
@@ -134,6 +138,12 @@ checkFertilityEvent_latlon <- function(latitude
                                                                                      ,round(zoo::rollapply(data = temperatures.min
                                                                                                            ,width = numConsecutiveDaysToCheck
                                                                                                            ,FUN = mean
+                                                                                                           ,na.rm = TRUE
+                                                                                                           ,align = 'right'
+                                                                                                           ,fill = NA),2)
+                                                                                     ,round(zoo::rollapply(data = precipitation.amount
+                                                                                                           ,width = numConsecutiveDaysToCheck
+                                                                                                           ,FUN = sum
                                                                                                            ,na.rm = TRUE
                                                                                                            ,align = 'right'
                                                                                                            ,fill = NA),2))]
@@ -151,8 +161,11 @@ checkFertilityEvent_latlon <- function(latitude
   #Drob weirdness related to leap years
   returnedData <- returnedData[!(month == 2 & day == 29) & dayOfYear <= 365,]
 
-  returnedData[,c('temperatures.max_avg','temperatures.min_avg') := list(round(mean(temperatures.max,na.rm = TRUE),2)
-                                                                         ,round(mean(temperatures.min,na.rm = TRUE),2)),by = 'monthDayString']
+  returnedData[,c('temperatures.max_avg'
+                  ,'temperatures.min_avg'
+                  ,'precipitation.amount_avg') := list(round(mean(temperatures.max,na.rm = TRUE),2)
+                                                      ,round(mean(temperatures.min,na.rm = TRUE),2)
+                                                      ,round(mean(precipitation.amount,na.rm = TRUE),2)),by = 'monthDayString']
 
   thresholdString <- c()
 
@@ -192,7 +205,7 @@ checkFertilityEvent_latlon <- function(latitude
 
     returnedData[,grep('exceedthreshold_',colnames(returnedData),fixed = TRUE,value = TRUE) := NULL]
 
-    eval(parse(text = paste0('returnedData[,freqOfFertilityEvent_',currentthreshold,' := mean(exceedthreshold,na.rm = TRUE),by = \'dayOfYear\']')))
+    eval(parse(text = paste0('returnedData[,freqOfFertilityEvent_',currentthreshold,' := round(mean(exceedthreshold,na.rm = TRUE),2),by = \'dayOfYear\']')))
 
     thresholdString <- c(thresholdString,paste0('freqOfFertilityEvent_',currentthreshold))
 
@@ -267,11 +280,14 @@ checkFertilityEvent_latlon <- function(latitude
                              ,'date'
                              ,'temperatures.max'
                              ,'temperatures.min'
+                             ,'precipitation.amount'
                              ,grep(pattern = 'freqOfFertilityEvent',x = colnames(returnedData),value = TRUE)
                              ,'temperatures.max_avg'
                              ,'temperatures.min_avg'
+                             ,'precipitation.amount_avg'
                              ,paste0(c('temperatures.max_roll_'
-                                       ,'temperatures.min_roll_')
+                                       ,'temperatures.min_roll_'
+                                       ,'precipitation.amount_roll_')
                                      ,numConsecutiveDaysToCheck)))
 
   setnames(returnedData,c('monthDayString'),c('monthDay'))
