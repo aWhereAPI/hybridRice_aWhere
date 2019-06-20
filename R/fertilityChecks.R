@@ -89,15 +89,17 @@ checkFertilityEvent_latlon <- function(latitude
 
     #Breaking it up this way will minimize the data transfer size
     if (wrapsNewYear == FALSE) {
-      currentStartDate <- paste0(yearsToInclude[x],'-',periodStart[1],'-',periodStart[2])
-      currentEndDate   <- paste0(yearsToInclude[x],'-',periodEnd[1],'-',periodEnd[2])
+      origStartDate <- paste0(yearsToInclude[x],'-',periodStart[1],'-',periodStart[2])
+      origEndDate   <- paste0(yearsToInclude[x],'-',periodEnd[1],'-',periodEnd[2])
     } else {
-      currentStartDate <- paste0(yearsToInclude[x],'-',periodStart[1],'-',periodStart[2])
-      currentEndDate   <- paste0(yearsToInclude[x]+ 1,'-',periodEnd[1],'-',periodEnd[2])
+      origStartDate <- paste0(yearsToInclude[x],'-',periodStart[1],'-',periodStart[2])
+      origEndDate   <- paste0(yearsToInclude[x]+ 1,'-',periodEnd[1],'-',periodEnd[2])
     }
 
     if (numConsecutiveDaysToCheck > 1) {
-      currentStartDate <- as.character(ymd(currentStartDate) - numConsecutiveDaysToCheck + 1)
+      currentStartDate <- as.character(ymd(origStartDate) - numConsecutiveDaysToCheck + 1)
+    } else {
+      currentStartDate <- origStartDate
     }
 
     if (currentStartDate > (Sys.Date()-1)) {
@@ -105,8 +107,10 @@ checkFertilityEvent_latlon <- function(latitude
       next
     }
 
-    if (currentEndDate > Sys.Date()) {
+    if (origEndDate > Sys.Date()) {
       currentEndDate <- as.character(Sys.Date()-1)
+    } else {
+      currentEndDate <- origEndDate
     }
 
     seqDateLength <- length(seq(lubridate::ymd(currentStartDate),lubridate::ymd(currentEndDate),1))
@@ -147,6 +151,9 @@ checkFertilityEvent_latlon <- function(latitude
                                                                                                            ,na.rm = TRUE
                                                                                                            ,align = 'right'
                                                                                                            ,fill = NA),2))]
+
+    returnedData[[length(returnedData)]] <-
+      returnedData[[length(returnedData)]][date %in% as.character(seq.Date(as.Date(origStartDate),as.Date(origEndDate),1))]
   }
 
   returnedData <- data.table::as.data.table(do.call("rbind", returnedData))
@@ -270,8 +277,6 @@ checkFertilityEvent_latlon <- function(latitude
 
   }
 
-  datesToInclude <- unique(returnedData[,monthDayString])[-(1:(numConsecutiveDaysToCheck-1))]
-
   returnedData[,c('month','day','dayOfYear','exceedthreshold','seqDatePosition') := NULL]
 
   setcolorder(returnedData,c('latitude'
@@ -292,7 +297,7 @@ checkFertilityEvent_latlon <- function(latitude
 
   setnames(returnedData,c('monthDayString'),c('monthDay'))
 
-  return(list(returnedData[monthDay %in% datesToInclude],fertilityPlot))
+  return(list(returnedData,fertilityPlot))
 
 }
 
