@@ -303,7 +303,7 @@ checkFertilityEvent_latlon <- function(latitude
                                      ,numConsecutiveDaysToCheck)))
 
   setnames(returnedData,c('monthDayString'),c('dayMonth'))
-  returnedData[,date := paste(day(date),month(date),year(date),sep = '-')]
+  returnedData[,date := paste(lubridate::day(date),lubridate::month(date),lubridate::year(date),sep = '-')]
 
   return(list(returnedData,fertilityPlot))
 
