@@ -123,6 +123,11 @@ checkFertilityEvent_latlon <- function(latitude
                                                                                                               ,currentEndDate
                                                                                                               ,propertiesToInclude = c('temperatures'
                                                                                                                                        ,'precipitation'))))
+    returnedData[[length(returnedData)]][,c('temperatures.max'
+                                            ,'temperatures.min'
+                                            ,'precipitation.amount') := list(round(temperatures.max,2)
+                                                                             ,round(temperatures.min,2)
+                                                                             ,round(precipitation.amount,2))]
 
     returnedData[[length(returnedData)]][,precipitation.amount := round(precipitation.amount,2)]
 
@@ -163,7 +168,9 @@ checkFertilityEvent_latlon <- function(latitude
   returnedData[,month     := lubridate::month(date)]
   returnedData[,day       := lubridate::day(date)]
   returnedData[,dayOfYear := lubridate::yday(date)]
-  returnedData[,monthDayString := paste0(month,'-',day)]
+
+  #returnedData[,monthDayString := paste0(month,'-',day)]
+  returnedData[,monthDayString := paste0(day,'-',month)]
 
   #Drob weirdness related to leap years
   returnedData <- returnedData[!(month == 2 & day == 29) & dayOfYear <= 365,]
@@ -295,7 +302,8 @@ checkFertilityEvent_latlon <- function(latitude
                                        ,'precipitation.amount_roll_')
                                      ,numConsecutiveDaysToCheck)))
 
-  setnames(returnedData,c('monthDayString'),c('monthDay'))
+  setnames(returnedData,c('monthDayString'),c('dayMonth'))
+  returnedData[,date := paste(lubridate::day(date),lubridate::month(date),lubridate::year(date),sep = '-')]
 
   return(list(returnedData,fertilityPlot))
 
