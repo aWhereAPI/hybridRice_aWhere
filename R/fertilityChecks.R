@@ -172,8 +172,10 @@ checkFertilityEvent_latlon <- function(latitude
   #returnedData[,monthDayString := paste0(month,'-',day)]
   returnedData[,monthDayString := paste0(day,'-',month)]
 
-  #Drob weirdness related to leap years
-  returnedData <- returnedData[!(month == 2 & day == 29) & dayOfYear <= 365,]
+  #Drob weirdness related to leap years if both leap years and non leap years included
+  if (all(lubridate::leap_year(yearsToInclude)) == FALSE) {
+    returnedData <- returnedData[!(month == 2 & day == 29) & dayOfYear <= 365,]
+  }
 
   returnedData[,c('temperatures.max_avg'
                   ,'temperatures.min_avg'
@@ -219,7 +221,7 @@ checkFertilityEvent_latlon <- function(latitude
 
     returnedData[,grep('exceedthreshold_',colnames(returnedData),fixed = TRUE,value = TRUE) := NULL]
 
-    eval(parse(text = paste0('returnedData[,freqOfFertilityEvent_',currentthreshold,' := round(mean(exceedthreshold,na.rm = TRUE),2),by = \'dayOfYear\']')))
+    eval(parse(text = paste0('returnedData[,freqOfFertilityEvent_',currentthreshold,' := round(mean(exceedthreshold,na.rm = TRUE),2),by = \'monthDayString\']')))
 
     thresholdString <- c(thresholdString,paste0('freqOfFertilityEvent_',currentthreshold))
 
