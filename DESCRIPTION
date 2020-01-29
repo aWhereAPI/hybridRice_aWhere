@@ -11,4 +11,5 @@ RoxygenNote: 6.0.1
 Imports: aWhereAPI,
           lubridate,
           data.table,
-          ggplot2
+          ggplot2,
+          zoo
