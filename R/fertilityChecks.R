@@ -248,7 +248,7 @@ checkFertilityEvent_latlon <- function(latitude
                       scale_x_continuous(breaks = unique(dataToPlot[,list(seqDatePosition,monthDayString)])[seq(numConsecutiveDaysToCheck,.N,sizeBreaks),seqDatePosition]
                                          ,labels= unique(dataToPlot[,list(seqDatePosition,monthDayString)])[seq(numConsecutiveDaysToCheck,.N,sizeBreaks),monthDayString]) +
                       ggtitle(label = paste0('Fertility Frequency')
-                              ,subtitle = paste0('Latitude: ',latitude,' Longitude: ',longitude,'\nNumber Sequential Days: ',numConsecutiveDaysToCheck,'\nYears Included: ',paste0(gsub('20',"'",yearsToInclude),collapse = ', '))) +
+                              ,subtitle = paste0('Latitude: ',latitude,' Longitude: ',longitude,'\nNumber Sequential Days: ',numConsecutiveDaysToCheck,'\nYears Included: ',paste0(gsub('^20',"'",yearsToInclude),collapse = ', '))) +
                       ylab('Frequency of Fertility Event') +
                       xlab('Date') +
                       theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
@@ -263,7 +263,7 @@ checkFertilityEvent_latlon <- function(latitude
                       scale_x_continuous(breaks = unique(dataToPlot[,list(seqDatePosition,monthDayString)])[seq(numConsecutiveDaysToCheck,.N,sizeBreaks),seqDatePosition]
                                          ,labels= unique(dataToPlot[,list(seqDatePosition,monthDayString)])[seq(numConsecutiveDaysToCheck,.N,sizeBreaks),monthDayString]) +
                       ggtitle(label = paste0('Fertility Frequency')
-                              ,subtitle = paste0('Latitude: ',latitude,' Longitude: ',longitude,'\nNumber Sequential Days: ',numConsecutiveDaysToCheck,'\nYears Included: ',paste0(gsub('20',"'",yearsToInclude),collapse = ', '))) +
+                              ,subtitle = paste0('Latitude: ',latitude,' Longitude: ',longitude,'\nNumber Sequential Days: ',numConsecutiveDaysToCheck,'\nYears Included: ',paste0(gsub('^20',"'",yearsToInclude),collapse = ', '))) +
                       ylab('Frequency of Fertility Event') +
                       xlab('Date') +
                       theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
